@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 15mm 25mm 15mm;
+    @bottom-center {
+      content: "Страница " counter(page) " из " counter(pages);
+      font-size: 9px;
+      color: #888;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.5;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .company-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+  }
+
+  .company-info {
+    font-size: 10px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .doc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .doc-number {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  .client-section {
+    background: #f8f9fa;
+    border-left: 4px solid #2c3e50;
+    padding: 12px 16px;
+    margin-bottom: 25px;
+  }
+
+  .client-section h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 5px;
+  }
+
+  .client-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .client-project {
+    font-size: 11px;
+    color: #666;
+    margin-top: 3px;
+  }
+
+  .room-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 20px 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 11px;
+  }
+
+  thead th {
+    background: #2c3e50;
+    color: white;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  thead th:nth-child(1) { width: 5%; text-align: center; }
+  thead th:nth-child(2) { width: 40%; }
+  thead th:nth-child(3) { width: 15%; text-align: center; }
+  thead th:nth-child(4) { width: 10%; text-align: center; }
+  thead th:nth-child(5) { width: 15%; text-align: right; }
+  thead th:nth-child(6) { width: 15%; text-align: right; }
+
+  tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) { background: #fafbfc; }
+
+  .col-num { text-align: center; color: #888; }
+  .col-name { font-weight: 500; }
+  .col-name .item-desc {
+    font-size: 10px;
+    color: #888;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .col-dims { text-align: center; color: #666; font-size: 10px; }
+  .col-qty { text-align: center; }
+  .col-price { text-align: right; }
+  .col-total { text-align: right; font-weight: 600; }
+
+  .room-subtotal {
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+  }
+
+  .summary {
+    margin-top: 30px;
+    border-top: 2px solid #2c3e50;
+    padding-top: 15px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+
+  .summary-row.discount { color: #e74c3c; }
+
+  .summary-row.grand-total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    border-top: 2px solid #2c3e50;
+    padding-top: 10px;
+    margin-top: 8px;
+  }
+
+  .notes {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #666;
+    line-height: 1.7;
+  }
+
+  .notes h4 {
+    font-size: 11px;
+    color: #333;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .footer {
+    margin-top: 40px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="company-name">{{ company.name }}</div>
+    <div class="company-info">
+      {{ company.phone }}<br>
+      {{ company.email }}<br>
+      {{ company.address }}
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="doc-title">Коммерческое предложение</div>
+    <div class="doc-number">{{ proposal_number }} от {{ proposal_date }}</div>
+  </div>
+</div>
+
+<div class="client-section">
+  <h3>Клиент</h3>
+  <div class="client-name">{{ client_name }}</div>
+  {% if project_name %}
+  <div class="client-project">Проект: {{ project_name }}</div>
+  {% endif %}
+</div>
+
+{% for room in rooms %}
+<div class="room-title">{{ room.name }}</div>
+<table>
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>Наименование</th>
+      <th>Размеры</th>
+      <th>Кол-во</th>
+      <th>Цена, {{ currency }}</th>
+      <th>Сумма, {{ currency }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in room.items %}
+    <tr>
+      <td class="col-num">{{ loop.index }}</td>
+      <td class="col-name">
+        {{ item.name }}
+        {% if item.description %}
+        <div class="item-desc">{{ item.description }}</div>
+        {% endif %}
+      </td>
+      <td class="col-dims">{{ item.dimensions or '—' }}</td>
+      <td class="col-qty">{{ item.quantity }}</td>
+      <td class="col-price">{{ "{:,.0f}".format(item.price).replace(",", " ") }}</td>
+      <td class="col-total">{{ "{:,.0f}".format(item.total).replace(",", " ") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="room-subtotal">
+  Итого по комнате: {{ "{:,.0f}".format(room.subtotal).replace(",", " ") }} {{ currency }}
+</div>
+{% endfor %}
+
+<div class="summary">
+  <div class="summary-row">
+    <span>Итого без скидки:</span>
+    <span>{{ "{:,.0f}".format(subtotal).replace(",", " ") }} {{ currency }}</span>
+  </div>
+  {% if discount_percent > 0 %}
+  <div class="summary-row discount">
+    <span>Скидка {{ discount_percent }}%:</span>
+    <span>−{{ "{:,.0f}".format(discount_amount).replace(",", " ") }} {{ currency }}</span>
+  </div>
+  {% endif %}
+  <div class="summary-row grand-total">
+    <span>ИТОГО:</span>
+    <span>{{ "{:,.0f}".format(grand_total).replace(",", " ") }} {{ currency }}</span>
+  </div>
+  {% if vat_included %}
+  <div class="summary-row" style="font-size: 10px; color: #888;">
+    <span>В том числе НДС 20%:</span>
+    <span>{{ "{:,.0f}".format(vat_amount).replace(",", " ") }} {{ currency }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="notes">
+  <h4>Условия</h4>
+  <ul>
+    <li>Предложение действительно {{ validity_days }} дней с даты составления</li>
+    <li>Сроки поставки: по согласованию</li>
+    <li>Условия оплаты: по согласованию</li>
+    {% if vat_included %}
+    <li>Цены указаны с учётом НДС</li>
+    {% else %}
+    <li>Цены указаны без учёта НДС</li>
+    {% endif %}
+  </ul>
+</div>
+
+<div class="footer">
+  <div>{{ company.name }} | {{ company.phone }}</div>
+  <div>{{ proposal_date }}</div>
+</div>
+
+</body>
+</html>

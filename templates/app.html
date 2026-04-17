@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settee — Генератор КП</title>
+<style>
+  :root {
+    --brand: #D4911E;
+    --brand-light: #f5e6cc;
+    --dark: #3c3228;
+    --gray: #787878;
+    --light: #fcf9f4;
+    --white: #ffffff;
+    --border: #e5e5e5;
+    --danger: #e74c3c;
+    --success: #27ae60;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f5;
+    color: var(--dark);
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .header {
+    background: var(--white);
+    border-bottom: 3px solid var(--brand);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .header h1 {
+    font-size: 20px;
+    color: var(--brand);
+    font-weight: 700;
+  }
+
+  .header-actions { display: flex; gap: 10px; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary { background: var(--brand); color: white; }
+  .btn-primary:hover { background: #c07f15; }
+  .btn-secondary { background: var(--light); color: var(--dark); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--brand-light); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #c0392b; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #219a52; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  /* Client info section */
+  .client-section {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .client-section.upload-area {
+    grid-template-columns: 1fr;
+    border: 2px dashed var(--border);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .client-section.upload-area:hover {
+    border-color: var(--brand);
+    background: var(--light);
+  }
+
+  .client-section.upload-area.dragover {
+    border-color: var(--brand);
+    background: var(--brand-light);
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+  .form-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border 0.2s;
+  }
+
+  .form-input:focus { outline: none; border-color: var(--brand); }
+
+  /* Room */
+  .room {
+    background: var(--white);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .room-header {
+    padding: 12px 20px;
+    background: var(--light);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .room-header input {
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--dark);
+    width: 300px;
+  }
+
+  .room-header input:focus { outline: none; border-bottom: 2px solid var(--brand); }
+
+  .room-subtotal { font-size: 14px; font-weight: 600; color: var(--brand); }
+
+  /* Item */
+  .item {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 120px 1fr 80px 100px 100px 36px;
+    gap: 12px;
+    align-items: start;
+    transition: background 0.2s;
+  }
+
+  .item:hover { background: var(--light); }
+  .item:last-child { border-bottom: none; }
+
+  /* Item photo */
+  .item-photo {
+    width: 120px;
+    height: 85px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px dashed var(--border);
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .item-photo:hover { border-color: var(--brand); }
+  .item-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .item-photo .placeholder { font-size: 11px; color: var(--gray); text-align: center; padding: 8px; }
+
+  .item-photo input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* Item details */
+  .item-details { display: flex; flex-direction: column; gap: 6px; }
+
+  .item-name {
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 2px 0;
+    font-family: inherit;
+    color: var(--dark);
+    width: 100%;
+  }
+
+  .item-name:focus { outline: none; border-bottom-color: var(--brand); }
+
+  .item-desc {
+    font-size: 12px;
+    border: none;
+    padding: 4px 0;
+    font-family: inherit;
+    color: var(--gray);
+    width: 100%;
+    resize: vertical;
+    min-height: 50px;
+  }
+
+  .item-desc:focus { outline: none; border: 1px solid var(--brand); border-radius: 4px; padding: 4px; }
+
+  .item-dims {
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-family: inherit;
+    color: var(--dark);
+    width: 100%;
+  }
+
+  /* Numeric fields */
+  .item-number {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    text-align: right;
+    width: 100%;
+  }
+
+  .item-number:focus { outline: none; border-color: var(--brand); }
+
+  .field-label { font-size: 10px; color: var(--gray); text-transform: uppercase; margin-bottom: 2px; }
+
+  .item-total {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand);
+    text-align: right;
+    padding-top: 20px;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    margin-top: 30px;
+  }
+
+  .delete-btn:hover { color: var(--danger); background: #fef0ef; }
+
+  /* Summary */
+  .summary {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    text-align: right;
+  }
+
+  .summary-row { display: flex; justify-content: flex-end; gap: 20px; padding: 4px 0; font-size: 14px; }
+  .summary-total { font-size: 22px; font-weight: 700; color: var(--brand); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--dark);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 1000;
+    animation: fadeIn 0.3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Loading overlay */
+  .loading {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    font-size: 18px;
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  .loading.active { display: flex; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--brand-light);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;">← Все КП</a>
+    <h1>Settee — Редактирование КП</h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="saveData()">Сохранить</button>
+    <button class="btn btn-primary" onclick="generatePDF()">Скачать PDF</button>
+  </div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <span>Генерация PDF...</span>
+</div>
+
+<div class="container">
+
+  <!-- Загрузка PDF -->
+  <div class="client-section upload-area" id="uploadArea" onclick="document.getElementById('pdfInput').click()">
+    <div>
+      <div style="font-size: 32px; margin-bottom: 8px;">📄</div>
+      <div style="font-size: 14px; font-weight: 600;">Загрузите PDF дизайн-проекта</div>
+      <div style="font-size: 12px; color: var(--gray); margin-top: 4px;">Перетащите файл сюда или нажмите для выбора</div>
+    </div>
+    <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="uploadPDF(this.files[0])">
+  </div>
+
+  <!-- Данные клиента -->
+  <div class="client-section">
+    <div class="form-group">
+      <label>Клиент</label>
+      <input class="form-input" id="clientName" value="{{ client_name or '' }}" placeholder="ФИО клиента">
+    </div>
+    <div class="form-group">
+      <label>Проект</label>
+      <input class="form-input" id="projectName" value="{{ project_name or '' }}" placeholder="Название проекта / адрес">
+    </div>
+    <div class="form-group">
+      <label>Скидка, %</label>
+      <input class="form-input" id="discountPercent" type="number" value="{{ discount_percent or 0 }}" min="0" max="100">
+    </div>
+    <div class="form-group">
+      <label>Номер КП</label>
+      <input class="form-input" id="proposalNumber" value="" placeholder="Авто">
+    </div>
+  </div>
+
+  <!-- Комнаты и позиции -->
+  <div id="roomsList"></div>
+
+  <!-- Добавить комнату -->
+  <div style="text-align: center; padding: 16px;">
+    <button class="btn btn-secondary" onclick="addRoom()">+ Добавить комнату</button>
+  </div>
+
+  <!-- Итого -->
+  <div class="summary" id="summary"></div>
+
+</div>
+
+<script>
+const PROJECT_ID = '{{ project_id }}';
+let rooms = {{ rooms | tojson }};
+
+function render() {
+  const container = document.getElementById('roomsList');
+  container.innerHTML = '';
+
+  rooms.forEach((room, ri) => {
+    const roomEl = document.createElement('div');
+    roomEl.className = 'room';
+    roomEl.innerHTML = `
+      <div class="room-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input value="${esc(room.name)}" onchange="rooms[${ri}].name=this.value" placeholder="Название комнаты">
+          <button class="btn btn-sm btn-secondary" onclick="addItem(${ri})">+ Позиция</button>
+        </div>
+        <div>
+          <span class="room-subtotal" id="roomTotal${ri}"></span>
+          <button class="btn btn-sm btn-danger" onclick="deleteRoom(${ri})" style="margin-left:10px;" title="Удалить комнату">&times;</button>
+        </div>
+      </div>
+      <div id="items${ri}"></div>
+    `;
+    container.appendChild(roomEl);
+
+    const itemsContainer = roomEl.querySelector(`#items${ri}`);
+    room.items.forEach((item, ii) => {
+      itemsContainer.appendChild(createItemEl(item, ri, ii));
+    });
+
+    updateRoomTotal(ri);
+  });
+
+  updateSummary();
+}
+
+function createItemEl(item, ri, ii) {
+  const div = document.createElement('div');
+  div.className = 'item';
+
+  const imgSrc = item.image ? '/' + item.image : '';
+  const imgHtml = imgSrc
+    ? `<img src="${imgSrc}" alt="">`
+    : `<div class="placeholder">Нажмите чтобы добавить фото</div>`;
+
+  div.innerHTML = `
+    <div class="item-photo" title="Заменить фото">
+      ${imgHtml}
+      <input type="file" accept="image/*" onchange="uploadItemImage(this.files[0], ${ri}, ${ii})">
+    </div>
+    <div class="item-details">
+      <input class="item-name" value="${esc(item.name)}" placeholder="Название" onchange="rooms[${ri}].items[${ii}].name=this.value">
+      <textarea class="item-desc" placeholder="Описание, характеристики..." onchange="rooms[${ri}].items[${ii}].description=this.value">${esc(item.description || '')}</textarea>
+      <input class="item-dims" value="${esc(item.dimensions || '')}" placeholder="Размеры (мм)" onchange="rooms[${ri}].items[${ii}].dimensions=this.value">
+    </div>
+    <div>
+      <div class="field-label">Кол-во</div>
+      <input class="item-number" type="number" value="${item.quantity}" min="1" onchange="rooms[${ri}].items[${ii}].quantity=+this.value; updateRoomTotal(${ri}); updateSummary();">
+    </div>
+    <div>
+      <div class="field-label">Цена, ₽</div>
+      <input class="item-number" type="number" value="${item.price}" min="0" step="1000" onchange="rooms[${ri}].items[${ii}].price=+this.value; updateRoomTotal(${ri}); updateSummary();">
+    </div>
+    <div class="item-total" id="itemTotal${ri}_${ii}">${formatNum(item.price * item.quantity)}</div>
+    <button class="delete-btn" onclick="deleteItem(${ri}, ${ii})" title="Удалить">&times;</button>
+  `;
+
+  return div;
+}
+
+function updateRoomTotal(ri) {
+  let total = 0;
+  rooms[ri].items.forEach((item, ii) => {
+    const t = item.price * item.quantity;
+    total += t;
+    const el = document.getElementById(`itemTotal${ri}_${ii}`);
+    if (el) el.textContent = formatNum(t);
+  });
+  const el = document.getElementById(`roomTotal${ri}`);
+  if (el) el.textContent = total > 0 ? formatNum(total) + ' ₽' : '';
+}
+
+function updateSummary() {
+  let totalQty = 0, totalSum = 0;
+  rooms.forEach(room => {
+    room.items.forEach(item => {
+      totalQty += item.quantity;
+      totalSum += item.price * item.quantity;
+    });
+  });
+
+  const discount = +(document.getElementById('discountPercent').value || 0);
+  const discountAmt = totalSum * discount / 100;
+  const grand = totalSum - discountAmt;
+
+  let html = `<div class="summary-row"><span>Позиций: ${totalQty} шт.</span><span>Сумма: ${formatNum(totalSum)} ₽</span></div>`;
+  if (discount > 0) {
+    html += `<div class="summary-row" style="color:var(--danger)"><span>Скидка ${discount}%:</span><span>-${formatNum(discountAmt)} ₽</span></div>`;
+  }
+  html += `<div class="summary-row"><span class="summary-total">ИТОГО: ${formatNum(grand)} ₽</span></div>`;
+  document.getElementById('summary').innerHTML = html;
+}
+
+function addRoom() {
+  rooms.push({ name: 'Новая комната', items: [] });
+  render();
+}
+
+function deleteRoom(ri) {
+  if (confirm('Удалить комнату "' + rooms[ri].name + '"?')) {
+    rooms.splice(ri, 1);
+    render();
+  }
+}
+
+function addItem(ri) {
+  rooms[ri].items.push({
+    name: '',
+    description: 'Изготовление по чертежу. Каркас: массив/фанера. Материал обивки: на согласовании',
+    dimensions: '',
+    quantity: 1,
+    price: 0,
+    image: ''
+  });
+  render();
+}
+
+function deleteItem(ri, ii) {
+  rooms[ri].items.splice(ii, 1);
+  render();
+}
+
+async function uploadItemImage(file, ri, ii) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.path) {
+    rooms[ri].items[ii].image = data.path;
+    render();
+  }
+}
+
+async function uploadPDF(file) {
+  if (!file) return;
+  showLoading('Анализ PDF...');
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await fetch('/api/upload-pdf/' + PROJECT_ID, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.rooms) {
+      rooms = data.rooms;
+      render();
+      toast(`Найдено ${data.count} позиций мебели`);
+    } else if (data.error) {
+      toast(data.error);
+    }
+  } catch (e) {
+    toast('Ошибка загрузки');
+  }
+  hideLoading();
+}
+
+function getProjectData() {
+  return {
+    rooms: rooms,
+    client_name: document.getElementById('clientName').value || '',
+    project_name: document.getElementById('projectName').value || '',
+    discount_percent: +(document.getElementById('discountPercent').value || 0),
+  };
+}
+
+async function saveData() {
+  await fetch('/api/project/' + PROJECT_ID + '/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getProjectData())
+  });
+  toast('Сохранено');
+}
+
+async function generatePDF() {
+  showLoading('Генерация PDF...');
+  const payload = getProjectData();
+
+  try {
+    const res = await fetch('/api/generate/' + PROJECT_ID, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.filename) {
+      window.location.href = '/download/' + data.filename;
+      toast('PDF готов!');
+    }
+  } catch (e) {
+    toast('Ошибка генерации');
+  }
+  hideLoading();
+}
+
+function formatNum(n) {
+  return n.toLocaleString('ru-RU');
+}
+
+function esc(s) {
+  return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function showLoading(msg) {
+  const el = document.getElementById('loading');
+  el.querySelector('span').textContent = msg || 'Загрузка...';
+  el.classList.add('active');
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.remove('active');
+}
+
+// Drag & drop для PDF
+const ua = document.getElementById('uploadArea');
+ua.addEventListener('dragover', e => { e.preventDefault(); ua.classList.add('dragover'); });
+ua.addEventListener('dragleave', () => ua.classList.remove('dragover'));
+ua.addEventListener('drop', e => {
+  e.preventDefault();
+  ua.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.toLowerCase().endsWith('.pdf')) {
+    uploadPDF(file);
+  } else {
+    toast('Нужен PDF файл');
+  }
+});
+
+// Обновление итого при изменении скидки
+document.getElementById('discountPercent').addEventListener('input', updateSummary);
+
+// Первый рендер
+render();
+</script>
+
+</body>
+</html>

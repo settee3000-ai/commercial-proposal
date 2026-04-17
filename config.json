@@ -1,0 +1,20 @@
+{
+  "company": {
+    "name": "Settee",
+    "phone": "+7 (989) 128 40 34",
+    "project_manager_phone": "+7-918-954-97-45",
+    "email": "i@setteee.ru",
+    "address": "г. Краснодар, ул. Бабушкина 65",
+    "website": "https://setteee.ru/",
+    "logo_path": "static/logo.png",
+    "work_hours": "с 10:00 до 19:00"
+  },
+  "proposal": {
+    "validity_days": 30,
+    "currency": "₽",
+    "discount_percent": 0,
+    "vat_included": false,
+    "production_days": 65,
+    "delivery_included": false
+  }
+}
