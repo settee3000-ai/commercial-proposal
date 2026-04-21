@@ -3,156 +3,259 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Settee — Мои КП</title>
+<title>Settee — Коммерческие предложения</title>
 <style>
   :root {
     --brand: #D4911E;
+    --brand-dark: #b87a14;
     --brand-light: #f5e6cc;
-    --dark: #3c3228;
-    --gray: #787878;
-    --light: #fcf9f4;
+    --brand-bg: #fdf8f0;
+    --dark: #2c2418;
+    --text: #4a3f35;
+    --gray: #8c8279;
+    --gray-light: #b5ada6;
+    --light: #faf8f6;
     --white: #ffffff;
-    --border: #e5e5e5;
-    --danger: #e74c3c;
+    --border: #ebe6e0;
+    --danger: #d4453a;
+    --shadow-sm: 0 1px 3px rgba(44,36,24,0.06);
+    --shadow-md: 0 4px 12px rgba(44,36,24,0.08);
+    --shadow-lg: 0 8px 30px rgba(44,36,24,0.12);
+    --radius: 12px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f5f5;
-    color: var(--dark);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background: var(--light);
+    color: var(--text);
+    min-height: 100vh;
   }
 
+  /* Header */
   .header {
     background: var(--white);
-    border-bottom: 3px solid var(--brand);
-    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.92);
   }
 
-  .header h1 { font-size: 20px; color: var(--brand); }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-brand img { height: 28px; }
+
+  .header-brand h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--gray);
+    letter-spacing: -0.2px;
+  }
+
+  .header-brand h1 span {
+    color: var(--dark);
+    font-weight: 700;
+  }
 
   .btn {
-    padding: 10px 24px;
+    padding: 9px 20px;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    letter-spacing: -0.1px;
   }
 
-  .btn-primary { background: var(--brand); color: white; }
-  .btn-primary:hover { background: #c07f15; }
-  .btn-sm { padding: 6px 14px; font-size: 12px; }
-  .btn-ghost { background: none; color: var(--gray); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--light); }
-  .btn-danger-ghost { background: none; color: var(--danger); border: 1px solid var(--border); }
-  .btn-danger-ghost:hover { background: #fef0ef; }
+  .btn-primary {
+    background: var(--brand);
+    color: white;
+    box-shadow: 0 1px 3px rgba(212,145,30,0.3);
+  }
+  .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,145,30,0.3); }
 
-  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-ghost { background: none; color: var(--gray); }
+  .btn-ghost:hover { background: var(--light); color: var(--text); }
+  .btn-danger-ghost { background: none; color: var(--gray-light); }
+  .btn-danger-ghost:hover { background: #fef0ef; color: var(--danger); }
 
+  /* Container */
+  .container { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--gray);
+    margin-bottom: 28px;
+  }
+
+  /* Empty state */
   .empty {
     text-align: center;
     padding: 80px 20px;
-    color: var(--gray);
   }
 
-  .empty-icon { font-size: 48px; margin-bottom: 16px; }
-  .empty h2 { font-size: 18px; color: var(--dark); margin-bottom: 8px; }
-  .empty p { font-size: 14px; margin-bottom: 24px; }
+  .empty-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--brand-bg);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+  }
 
+  .empty h2 { font-size: 17px; color: var(--dark); margin-bottom: 6px; font-weight: 700; }
+  .empty p { font-size: 14px; color: var(--gray); margin-bottom: 24px; }
+
+  /* Project cards */
   .project-card {
     background: var(--white);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     cursor: pointer;
     text-decoration: none;
     color: inherit;
   }
 
   .project-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand-light);
     transform: translateY(-1px);
   }
 
-  .project-info { flex: 1; }
+  .project-info { flex: 1; min-width: 0; }
 
   .project-client {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--dark);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .project-name {
     font-size: 13px;
     color: var(--gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .project-meta {
     display: flex;
-    gap: 20px;
+    gap: 24px;
     align-items: center;
+    flex-shrink: 0;
   }
 
-  .project-stat {
-    text-align: center;
-    min-width: 80px;
-  }
+  .project-stat { text-align: right; min-width: 70px; }
 
   .project-stat-value {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    color: var(--brand);
+    color: var(--dark);
+    font-variant-numeric: tabular-nums;
   }
+
+  .project-stat-value.price { color: var(--brand); }
 
   .project-stat-label {
     font-size: 10px;
-    color: var(--gray);
+    color: var(--gray-light);
     text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .project-date {
     font-size: 12px;
-    color: var(--gray);
-    min-width: 100px;
+    color: var(--gray-light);
+    min-width: 90px;
     text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
   .project-actions {
     display: flex;
-    gap: 6px;
-    margin-left: 16px;
+    gap: 2px;
+    margin-left: 8px;
   }
 
-  .project-actions .btn { opacity: 0; transition: opacity 0.2s; }
+  .project-actions .btn { opacity: 0; transition: all 0.15s; }
   .project-card:hover .project-actions .btn { opacity: 1; }
+
+  /* Divider between header and cards */
+  .section-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .project-count {
+    font-size: 12px;
+    color: var(--gray-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Settee — Коммерческие предложения</h1>
+  <div class="header-brand">
+    <img src="/images/thumbs/../../../static/logo.png" alt="Settee" onerror="this.style.display='none'">
+    <h1><span>КП</span> Менеджер</h1>
+  </div>
   <a href="/new" class="btn btn-primary">+ Новое КП</a>
 </div>
 
 <div class="container">
+  <div class="page-title">Коммерческие предложения</div>
+  <div class="page-subtitle">Управление КП для клиентов</div>
+
   {% if projects %}
+    <div class="section-bar">
+      <span class="project-count">{{ projects | length }} {{ 'проект' if projects | length == 1 else 'проектов' }}</span>
+    </div>
+
     {% for p in projects %}
     <div class="project-card" onclick="window.location='/edit/{{ p.id }}'">
       <div class="project-info">
@@ -165,7 +268,7 @@
           <div class="project-stat-label">позиций</div>
         </div>
         <div class="project-stat">
-          <div class="project-stat-value">{{ "{:,.0f}".format(p.total).replace(",", " ") }} ₽</div>
+          <div class="project-stat-value price">{{ "{:,.0f}".format(p.total).replace(",", " ") }} ₽</div>
           <div class="project-stat-label">сумма</div>
         </div>
         <div class="project-date">{{ p.updated }}</div>
@@ -179,8 +282,8 @@
   {% else %}
     <div class="empty">
       <div class="empty-icon">📋</div>
-      <h2>Нет сохранённых КП</h2>
-      <p>Создайте первое коммерческое предложение</p>
+      <h2>Пока нет проектов</h2>
+      <p>Создайте первое коммерческое предложение для клиента</p>
       <a href="/new" class="btn btn-primary">+ Новое КП</a>
     </div>
   {% endif %}
@@ -193,6 +296,5 @@ async function deleteProject(id, name) {
   window.location.reload();
 }
 </script>
-
 </body>
 </html>

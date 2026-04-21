@@ -3,7 +3,8 @@ __pycache__/
 uploads/
 output/
 logs/
-images/thumbs/
+images/
 projects/
 .DS_Store
+.env
 fonts/*.pkl

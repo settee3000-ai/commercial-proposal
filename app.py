@@ -121,6 +121,7 @@ def edit_project(project_id):
                            client_name=data.get("client_name", ""),
                            project_name=data.get("project_name", ""),
                            discount_percent=data.get("discount_percent", 0),
+                           renders=data.get("renders", []),
                            config=config)
 
 
@@ -151,6 +152,169 @@ def api_delete_project(project_id):
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/upload-photos/<project_id>", methods=["POST"])
+def upload_photos(project_id):
+    """Загрузка фото — каждое фото становится позицией."""
+    if "files" not in request.files:
+        return jsonify({"error": "Нет файлов"}), 400
+
+    files = request.files.getlist("files")
+    if not files:
+        return jsonify({"error": "Нет файлов"}), 400
+
+    thumbs_dir = app.config["IMAGES_FOLDER"]
+    new_items = []
+
+    for file in files:
+        if not file.filename:
+            continue
+        ext = Path(file.filename).suffix.lower()
+        if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+            continue
+
+        # Сохраняем и сжимаем
+        img_name = f"{project_id}_{uuid.uuid4().hex[:6]}{ext}"
+        filepath = thumbs_dir / img_name
+        file.save(str(filepath))
+
+        try:
+            from PIL import Image
+            img = Image.open(str(filepath))
+            if img.width > 800:
+                ratio = 800 / img.width
+                img = img.resize((800, int(img.height * ratio)), Image.LANCZOS)
+                img.save(str(filepath), optimize=True)
+        except Exception:
+            pass
+
+        new_items.append({
+            "name": "",
+            "description": "Изготовление по чертежу. Каркас: массив/фанера. Наполнение: резинотканевые ремни, вязкоэластичная пена, холкон. Материал обивки: на согласовании",
+            "dimensions": "",
+            "quantity": 1,
+            "price": 0,
+            "image": f"images/thumbs/{img_name}",
+        })
+
+    # Добавляем в проект
+    data = load_project(project_id) or {"rooms": [], "client_name": "", "project_name": "", "discount_percent": 0}
+    if not data.get("rooms"):
+        data["rooms"] = [{"name": "Основное", "items": []}]
+
+    # Добавляем в первую комнату или создаём новую
+    room_name = request.form.get("room", "Загруженные фото")
+    target_room = None
+    for room in data["rooms"]:
+        if room["name"] == room_name:
+            target_room = room
+            break
+    if not target_room:
+        target_room = {"name": room_name, "items": []}
+        data["rooms"].append(target_room)
+
+    target_room["items"].extend(new_items)
+    save_project(project_id, data)
+
+    return jsonify({"status": "ok", "rooms": data["rooms"], "count": len(new_items)})
+
+
+@app.route("/api/ai-analyze/<project_id>", methods=["POST"])
+def ai_analyze(project_id):
+    """Умное ТЗ: ИИ анализирует фото/PDF + текст и формирует КП."""
+    task_text = request.form.get("task", "")
+    if not task_text:
+        return jsonify({"error": "Напишите техническое задание"}), 400
+
+    files = request.files.getlist("files")
+    if not files:
+        return jsonify({"error": "Загрузите фото или PDF"}), 400
+
+    thumbs_dir = app.config["IMAGES_FOLDER"]
+    image_paths = []  # абсолютные пути для ИИ
+    image_web_paths = []  # веб-пути для фронтенда
+
+    for file in files:
+        if not file.filename:
+            continue
+
+        ext = Path(file.filename).suffix.lower()
+
+        if ext == ".pdf":
+            # Извлекаем рендеры из PDF
+            filename = secure_filename(file.filename) or "project.pdf"
+            filepath = app.config["UPLOAD_FOLDER"] / filename
+            file.save(str(filepath))
+
+            try:
+                import subprocess as sp
+                result = sp.run(
+                    ["/usr/bin/python3", str(BASE_DIR / "extract_renders.py"),
+                     str(filepath), project_id, str(thumbs_dir)],
+                    capture_output=True, text=True, timeout=300
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    room_renders = json.loads(result.stdout)
+                    for paths in room_renders.values():
+                        for p in paths:
+                            abs_path = str(BASE_DIR / p)
+                            image_paths.append(abs_path)
+                            image_web_paths.append(p)
+            except Exception:
+                pass
+
+        elif ext in (".png", ".jpg", ".jpeg", ".webp"):
+            img_name = f"{project_id}_{uuid.uuid4().hex[:6]}{ext}"
+            filepath = thumbs_dir / img_name
+            file.save(str(filepath))
+
+            try:
+                from PIL import Image
+                img = Image.open(str(filepath))
+                if img.width > 800:
+                    ratio = 800 / img.width
+                    img = img.resize((800, int(img.height * ratio)), Image.LANCZOS)
+                    img.save(str(filepath), optimize=True)
+            except Exception:
+                pass
+
+            image_paths.append(str(filepath))
+            image_web_paths.append(f"images/thumbs/{img_name}")
+
+    if not image_paths:
+        return jsonify({"error": "Не удалось обработать файлы"}), 400
+
+    # Отправляем в ИИ (максимум 6 изображений чтобы не перегрузить)
+    from ai_analyze import analyze
+    selected_images = image_paths[:6]
+    items = analyze(selected_images, task_text)
+
+    if not items:
+        return jsonify({"error": "ИИ не смог определить мебель. Попробуйте уточнить ТЗ."}), 400
+
+    # Привязываем фото к позициям
+    for i, item in enumerate(items):
+        if not item.get("image") and i < len(image_web_paths):
+            item["image"] = image_web_paths[i % len(image_web_paths)]
+        item.setdefault("price", 0)
+        item.setdefault("quantity", 1)
+
+    # Группируем по комнатам
+    rooms_dict = {}
+    for item in items:
+        room_name = item.pop("room", "") or "Основное"
+        rooms_dict.setdefault(room_name, []).append(item)
+
+    rooms = [{"name": name, "items": room_items} for name, room_items in rooms_dict.items()]
+
+    # Сохраняем
+    data = load_project(project_id) or {}
+    data["rooms"] = rooms
+    data["renders"] = image_web_paths
+    save_project(project_id, data)
+
+    return jsonify({"status": "ok", "rooms": rooms, "count": len(items), "renders": image_web_paths})
+
+
 @app.route("/api/upload-pdf/<project_id>", methods=["POST"])
 def upload_pdf(project_id):
     if "file" not in request.files:
@@ -166,47 +330,53 @@ def upload_pdf(project_id):
 
     items = parse_pdf(str(filepath))
 
-    # Извлекаем рендеры
+    # Извлекаем рендеры через subprocess
+    room_renders = {}
+    all_render_paths = []
     try:
-        import fitz
-        doc = fitz.open(str(filepath))
-        thumbs_dir = app.config["IMAGES_FOLDER"]
-        img_index = 0
-        for i in range(len(doc.pages)):
-            page = doc[i]
-            text = page.get_text()
-            if "визуализация" in text.lower():
-                pix = page.get_pixmap(dpi=150)
-                from PIL import Image
-                import io
-                img_data = pix.tobytes("png")
-                img = Image.open(io.BytesIO(img_data))
-                ratio = 600 / img.width
-                img = img.resize((600, int(img.height * ratio)), Image.LANCZOS)
-                img_name = f"{project_id}_{img_index}.png"
-                img.save(str(thumbs_dir / img_name), "PNG", optimize=True)
-                if img_index < len(items):
-                    items[img_index]["image"] = f"images/thumbs/{img_name}"
-                img_index += 1
-        doc.close()
+        import subprocess
+        result = subprocess.run(
+            ["/usr/bin/python3", str(BASE_DIR / "extract_renders.py"),
+             str(filepath), project_id, str(app.config["IMAGES_FOLDER"])],
+            capture_output=True, text=True, timeout=300
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            room_renders = json.loads(result.stdout)
+            for paths in room_renders.values():
+                all_render_paths.extend(paths)
     except Exception:
         pass
 
+    # Группируем позиции по комнатам
     rooms_dict = {}
     for item in items:
         room_name = item.pop("room", "") or "Основное"
+        # Не привязываем рендеры автоматически — пользователь выберет сам
+        item["image"] = ""
         rooms_dict.setdefault(room_name, []).append(item)
 
     rooms = [{"name": name, "items": room_items} for name, room_items in rooms_dict.items()]
 
+    # Добавляем пустые комнаты из рендеров, если их нет в позициях
+    existing_rooms = {r["name"].lower() for r in rooms}
+    for rname in room_renders.keys():
+        if rname.lower() not in existing_rooms:
+            rooms.append({"name": rname, "items": []})
+
     # Сохраняем в проект
     data = load_project(project_id) or {}
     data["rooms"] = rooms
+    data["renders"] = all_render_paths
     if not data.get("project_name"):
         data["project_name"] = Path(file.filename).stem
     save_project(project_id, data)
 
-    return jsonify({"status": "ok", "rooms": rooms, "count": len(items)})
+    return jsonify({
+        "status": "ok",
+        "rooms": rooms,
+        "count": len(items),
+        "renders": all_render_paths,
+    })
 
 
 @app.route("/api/upload-image", methods=["POST"])
@@ -278,6 +448,15 @@ def download(filename):
     return "Файл не найден", 404
 
 
+@app.route("/preview/<filename>")
+def preview(filename):
+    """Открывает PDF в браузере для предпросмотра."""
+    filepath = app.config["OUTPUT_FOLDER"] / filename
+    if filepath.exists():
+        return send_file(str(filepath), as_attachment=False, mimetype="application/pdf")
+    return "Файл не найден", 404
+
+
 @app.route("/images/thumbs/<filename>")
 def serve_image(filename):
     filepath = app.config["IMAGES_FOLDER"] / filename
@@ -286,5 +465,15 @@ def serve_image(filename):
     return "", 404
 
 
+@app.route("/static/<filename>")
+def serve_static(filename):
+    filepath = BASE_DIR / "static" / filename
+    if filepath.exists():
+        return send_file(str(filepath))
+    return "", 404
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    import sys
+    debug = "--debug" in sys.argv
+    app.run(debug=debug, port=5050)

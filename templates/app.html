@@ -3,388 +3,664 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Settee — Генератор КП</title>
+<title>Settee — Редактирование КП</title>
 <style>
   :root {
     --brand: #D4911E;
+    --brand-dark: #b87a14;
     --brand-light: #f5e6cc;
-    --dark: #3c3228;
-    --gray: #787878;
-    --light: #fcf9f4;
+    --brand-bg: #fdf8f0;
+    --dark: #2c2418;
+    --text: #4a3f35;
+    --gray: #8c8279;
+    --gray-light: #b5ada6;
+    --light: #faf8f6;
     --white: #ffffff;
-    --border: #e5e5e5;
-    --danger: #e74c3c;
-    --success: #27ae60;
+    --border: #ebe6e0;
+    --danger: #d4453a;
+    --success: #2d8a4e;
+    --shadow-sm: 0 1px 3px rgba(44,36,24,0.06);
+    --shadow-md: 0 4px 12px rgba(44,36,24,0.08);
+    --radius: 12px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f5f5f5;
-    color: var(--dark);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background: var(--light);
+    color: var(--text);
     line-height: 1.5;
   }
 
-  /* Header */
+  /* ===== HEADER ===== */
   .header {
-    background: var(--white);
-    border-bottom: 3px solid var(--brand);
-    padding: 16px 32px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
-  .header h1 {
-    font-size: 20px;
-    color: var(--brand);
-    font-weight: 700;
-  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
 
-  .header-actions { display: flex; gap: 10px; }
-
-  /* Buttons */
-  .btn {
-    padding: 8px 20px;
-    border: none;
+  .back-link {
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 10px;
     border-radius: 6px;
-    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .back-link:hover { background: var(--light); color: var(--text); }
+
+  .header-divider { width: 1px; height: 20px; background: var(--border); }
+
+  .header-title { font-size: 14px; font-weight: 600; color: var(--dark); }
+
+  .save-indicator {
+    font-size: 12px;
+    color: var(--gray-light);
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.3s;
+  }
+  .save-indicator.saving { color: var(--brand); }
+  .save-indicator.saved { color: var(--success); }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none;
+    letter-spacing: -0.1px;
   }
 
-  .btn-primary { background: var(--brand); color: white; }
-  .btn-primary:hover { background: #c07f15; }
-  .btn-secondary { background: var(--light); color: var(--dark); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--brand-light); }
-  .btn-danger { background: var(--danger); color: white; }
-  .btn-danger:hover { background: #c0392b; }
-  .btn-success { background: var(--success); color: white; }
-  .btn-success:hover { background: #219a52; }
+  .btn-primary { background: var(--brand); color: white; box-shadow: 0 1px 3px rgba(212,145,30,0.3); }
+  .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); }
+  .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--light); border-color: var(--brand-light); }
   .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-icon { padding: 6px 8px; font-size: 16px; background: none; color: var(--gray-light); border: none; cursor: pointer; border-radius: 6px; }
+  .btn-icon:hover { background: var(--light); color: var(--text); }
+  .btn-icon.danger:hover { background: #fef0ef; color: var(--danger); }
 
-  /* Layout */
-  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  /* ===== LAYOUT ===== */
+  .container { max-width: 1060px; margin: 0 auto; padding: 24px 20px 60px; }
 
-  /* Client info section */
-  .client-section {
+  /* ===== UPLOAD ===== */
+  .upload-area {
     background: var(--white);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .client-section.upload-area {
-    grid-template-columns: 1fr;
     border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
+    margin-bottom: 20px;
   }
+  .upload-area:hover { border-color: var(--brand); background: var(--brand-bg); }
+  .upload-area.dragover { border-color: var(--brand); background: var(--brand-light); }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-title { font-size: 14px; font-weight: 600; color: var(--dark); }
+  .upload-hint { font-size: 12px; color: var(--gray-light); margin-top: 2px; }
 
-  .client-section.upload-area:hover {
-    border-color: var(--brand);
-    background: var(--light);
-  }
-
-  .client-section.upload-area.dragover {
-    border-color: var(--brand);
-    background: var(--brand-light);
+  /* ===== CLIENT SECTION ===== */
+  .client-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    display: grid;
+    grid-template-columns: 1fr 1fr 120px 140px;
+    gap: 14px;
+    align-items: end;
   }
 
   .form-group { display: flex; flex-direction: column; gap: 4px; }
-  .form-group label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 
-  .form-input {
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: border 0.2s;
+  .form-label {
+    font-size: 11px;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
   }
 
-  .form-input:focus { outline: none; border-color: var(--brand); }
+  .form-input {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    transition: all 0.15s;
+    background: var(--white);
+  }
+  .form-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(212,145,30,0.1); }
 
-  /* Room */
+  /* ===== ROOM ===== */
   .room {
     background: var(--white);
-    border-radius: 10px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
   }
 
   .room-header {
-    padding: 12px 20px;
-    background: var(--light);
-    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
   }
+  .room-header:hover { background: var(--light); }
 
-  .room-header input {
-    font-size: 16px;
+  .room-header-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+
+  .room-toggle {
+    font-size: 11px;
+    color: var(--gray-light);
+    transition: transform 0.2s;
+    width: 16px;
+    text-align: center;
+  }
+  .room-toggle.collapsed { transform: rotate(-90deg); }
+
+  .room-name-input {
+    font-size: 15px;
     font-weight: 700;
     border: none;
     background: transparent;
     color: var(--dark);
-    width: 300px;
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  .room-name-input:focus { outline: none; }
+
+  .room-header-right { display: flex; align-items: center; gap: 10px; }
+
+  .room-subtotal {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand);
+    font-variant-numeric: tabular-nums;
   }
 
-  .room-header input:focus { outline: none; border-bottom: 2px solid var(--brand); }
+  .room-count {
+    font-size: 11px;
+    color: var(--gray-light);
+    background: var(--light);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
 
-  .room-subtotal { font-size: 14px; font-weight: 600; color: var(--brand); }
+  .room-body { border-top: 1px solid var(--border); }
+  .room-body.collapsed { display: none; }
 
-  /* Item */
+  /* ===== ITEM ===== */
   .item {
     padding: 16px 20px;
     border-bottom: 1px solid var(--border);
     display: grid;
-    grid-template-columns: 120px 1fr 80px 100px 100px 36px;
-    gap: 12px;
+    grid-template-columns: 20px 110px 1fr auto;
+    gap: 16px;
     align-items: start;
-    transition: background 0.2s;
+    transition: background 0.1s;
   }
-
-  .item:hover { background: var(--light); }
   .item:last-child { border-bottom: none; }
+  .item:hover { background: rgba(250,248,246,0.5); }
+  .item.drag-over { border-top: 2px solid var(--brand); }
 
-  /* Item photo */
+  .drag-handle {
+    cursor: grab;
+    color: var(--gray-light);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 2px;
+    user-select: none;
+    align-self: center;
+  }
+  .drag-handle:active { cursor: grabbing; }
+
+  /* Photo */
   .item-photo {
-    width: 120px;
-    height: 85px;
-    border-radius: 6px;
+    width: 110px;
+    height: 78px;
+    border-radius: 8px;
     overflow: hidden;
-    background: #f0f0f0;
+    background: var(--light);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border: 2px dashed var(--border);
-    transition: all 0.2s;
+    border: 1.5px dashed var(--border);
+    transition: all 0.15s;
     position: relative;
+    flex-shrink: 0;
   }
-
   .item-photo:hover { border-color: var(--brand); }
+  .item-photo.has-image { border-style: solid; border-color: var(--border); }
   .item-photo img { width: 100%; height: 100%; object-fit: cover; }
-  .item-photo .placeholder { font-size: 11px; color: var(--gray); text-align: center; padding: 8px; }
-
-  .item-photo input[type="file"] {
+  .item-photo .photo-placeholder {
+    font-size: 10px;
+    color: var(--gray-light);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .item-photo .photo-overlay {
     position: absolute;
     inset: 0;
-    opacity: 0;
-    cursor: pointer;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 7px;
   }
+  .item-photo:hover .photo-overlay { display: flex; }
+  .item-photo input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-  /* Item details */
-  .item-details { display: flex; flex-direction: column; gap: 6px; }
+  /* Details */
+  .item-details { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
-  .item-name {
+  .item-name-input {
     font-size: 14px;
     font-weight: 700;
     border: none;
-    border-bottom: 1px solid transparent;
     padding: 2px 0;
     font-family: inherit;
     color: var(--dark);
     width: 100%;
+    background: transparent;
   }
+  .item-name-input:focus { outline: none; border-bottom: 1.5px solid var(--brand); }
+  .item-name-input::placeholder { color: var(--gray-light); font-weight: 400; }
 
-  .item-name:focus { outline: none; border-bottom-color: var(--brand); }
-
-  .item-desc {
+  .item-desc-input {
     font-size: 12px;
     border: none;
-    padding: 4px 0;
+    padding: 0;
     font-family: inherit;
     color: var(--gray);
     width: 100%;
-    resize: vertical;
-    min-height: 50px;
+    resize: none;
+    background: transparent;
+    line-height: 1.5;
+    min-height: 36px;
   }
+  .item-desc-input:focus { outline: none; background: var(--light); border-radius: 4px; padding: 4px 6px; }
+  .item-desc-input::placeholder { color: var(--gray-light); }
 
-  .item-desc:focus { outline: none; border: 1px solid var(--brand); border-radius: 4px; padding: 4px; }
+  .item-dims-row { display: flex; gap: 8px; align-items: center; }
 
-  .item-dims {
+  .item-dims-input {
     font-size: 12px;
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 4px 6px;
+    border-radius: 6px;
+    padding: 4px 8px;
     font-family: inherit;
-    color: var(--dark);
-    width: 100%;
+    color: var(--text);
+    width: 160px;
+    background: var(--white);
+  }
+  .item-dims-input:focus { outline: none; border-color: var(--brand); }
+
+  /* Numbers column */
+  .item-numbers {
+    display: flex;
+    gap: 8px;
+    align-items: start;
+    flex-shrink: 0;
   }
 
-  /* Numeric fields */
-  .item-number {
-    padding: 6px 8px;
+  .number-field { display: flex; flex-direction: column; gap: 3px; }
+  .number-field label { font-size: 10px; color: var(--gray-light); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+
+  .number-input {
+    width: 90px;
+    padding: 7px 8px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
     font-size: 14px;
     font-family: inherit;
     text-align: right;
-    width: 100%;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    background: var(--white);
+    transition: all 0.15s;
   }
+  .number-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(212,145,30,0.1); }
+  .number-input.qty { width: 60px; }
 
-  .item-number:focus { outline: none; border-color: var(--brand); }
-
-  .field-label { font-size: 10px; color: var(--gray); text-transform: uppercase; margin-bottom: 2px; }
-
-  .item-total {
-    font-size: 14px;
+  .item-total-value {
+    font-size: 15px;
     font-weight: 700;
     color: var(--brand);
     text-align: right;
-    padding-top: 20px;
+    padding-top: 22px;
+    min-width: 90px;
+    font-variant-numeric: tabular-nums;
   }
 
-  .delete-btn {
+  /* Add item button inside room */
+  .add-item-row {
+    padding: 10px 20px;
+    text-align: center;
+  }
+
+  .add-item-btn {
+    font-size: 12px;
+    color: var(--gray-light);
     background: none;
-    border: none;
-    color: var(--border);
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
     cursor: pointer;
-    font-size: 18px;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    margin-top: 30px;
+    transition: all 0.15s;
+    font-weight: 600;
+    width: 100%;
+  }
+  .add-item-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-bg); }
+
+  /* ===== ADD ROOM ===== */
+  .add-room-area {
+    text-align: center;
+    padding: 12px;
   }
 
-  .delete-btn:hover { color: var(--danger); background: #fef0ef; }
-
-  /* Summary */
+  /* ===== SUMMARY ===== */
   .summary {
     background: var(--white);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-top: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    text-align: right;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    margin-top: 24px;
+    box-shadow: var(--shadow-sm);
   }
 
-  .summary-row { display: flex; justify-content: flex-end; gap: 20px; padding: 4px 0; font-size: 14px; }
-  .summary-total { font-size: 22px; font-weight: 700; color: var(--brand); }
+  .summary-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    padding: 3px 0;
+    font-size: 14px;
+    color: var(--gray);
+  }
 
-  /* Toast */
+  .summary-row.discount { color: var(--danger); }
+
+  .summary-divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+  .summary-total {
+    display: flex;
+    justify-content: flex-end;
+    gap: 24px;
+    padding: 4px 0;
+  }
+
+  .summary-total-label { font-size: 16px; font-weight: 600; color: var(--dark); }
+
+  .summary-total-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--brand);
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== TOAST ===== */
   .toast {
     position: fixed;
     bottom: 24px;
     right: 24px;
     background: var(--dark);
     color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
     z-index: 1000;
-    animation: fadeIn 0.3s;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    animation: slideUp 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== RENDER GALLERY MODAL ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 16px;
+  }
 
-  /* Loading overlay */
+  .render-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .render-option {
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .render-option:hover { border-color: var(--brand); transform: scale(1.03); }
+  .render-option.selected { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand); }
+  .render-option img { width: 100%; height: 120px; object-fit: cover; display: block; }
+  .render-option .render-label {
+    font-size: 10px;
+    color: var(--gray);
+    padding: 4px 6px;
+    background: var(--light);
+    text-align: center;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  /* ===== LOADING ===== */
   .loading {
     position: fixed;
     inset: 0;
-    background: rgba(255,255,255,0.85);
+    background: rgba(250,248,246,0.9);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 200;
-    font-size: 18px;
-    color: var(--brand);
-    font-weight: 600;
+    flex-direction: column;
+    gap: 12px;
   }
-
   .loading.active { display: flex; }
 
   .spinner {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border: 3px solid var(--brand-light);
     border-top-color: var(--brand);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-right: 12px;
+    animation: spin 0.7s linear infinite;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { font-size: 14px; color: var(--brand); font-weight: 600; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 800px) {
+    .client-card { grid-template-columns: 1fr 1fr; }
+    .item { grid-template-columns: 20px 90px 1fr; }
+    .item-numbers { flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div style="display:flex;align-items:center;gap:16px;">
-    <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;">← Все КП</a>
-    <h1>Settee — Редактирование КП</h1>
+  <div class="header-left">
+    <a href="/" class="back-link">← Все КП</a>
+    <div class="header-divider"></div>
+    <span class="header-title">Редактирование</span>
+    <span class="save-indicator" id="saveStatus"></span>
   </div>
   <div class="header-actions">
-    <button class="btn btn-secondary" onclick="saveData()">Сохранить</button>
+    <button class="btn btn-outline" onclick="saveData()">Сохранить</button>
+    <button class="btn btn-outline" onclick="previewPDF()">Предпросмотр</button>
     <button class="btn btn-primary" onclick="generatePDF()">Скачать PDF</button>
   </div>
 </div>
 
 <div class="loading" id="loading">
   <div class="spinner"></div>
-  <span>Генерация PDF...</span>
+  <span class="loading-text">Генерация PDF...</span>
+</div>
+
+<!-- Render gallery modal -->
+<div class="modal-overlay" id="renderModal" onclick="if(event.target===this)closeRenderModal()">
+  <div class="modal">
+    <div class="modal-title">Выберите фото для позиции</div>
+    <div class="render-grid" id="renderGrid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeRenderModal()">Отмена</button>
+      <button class="btn btn-outline" onclick="document.getElementById('renderFileInput').click()">Загрузить своё фото</button>
+      <input type="file" id="renderFileInput" accept="image/*" style="display:none" onchange="uploadAndSelectImage(this.files[0])">
+    </div>
+  </div>
 </div>
 
 <div class="container">
 
-  <!-- Загрузка PDF -->
-  <div class="client-section upload-area" id="uploadArea" onclick="document.getElementById('pdfInput').click()">
-    <div>
-      <div style="font-size: 32px; margin-bottom: 8px;">📄</div>
-      <div style="font-size: 14px; font-weight: 600;">Загрузите PDF дизайн-проекта</div>
-      <div style="font-size: 12px; color: var(--gray); margin-top: 4px;">Перетащите файл сюда или нажмите для выбора</div>
+  <!-- Smart TZ -->
+  <div style="background:var(--white); border-radius:var(--radius); border:1px solid var(--border); padding:20px 24px; margin-bottom:20px; box-shadow:var(--shadow-sm);">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <span style="font-size:20px;">🤖</span>
+      <span style="font-size:15px; font-weight:700; color:var(--dark);">Умное ТЗ</span>
+      <span style="font-size:12px; color:var(--gray-light);">— ИИ сформирует КП из проекта и описания</span>
     </div>
-    <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="uploadPDF(this.files[0])">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('pdfInput').click()" style="margin:0; padding:18px;">
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">PDF дизайн-проекта</div>
+        <div class="upload-hint">Рендеры и чертежи</div>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="addAiFiles(this.files)">
+      </div>
+      <div class="upload-area" id="uploadPhotos" onclick="document.getElementById('photoInput').click()" style="margin:0; padding:18px;">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-title">Фото / рендеры</div>
+        <div class="upload-hint">JPG, PNG — можно несколько</div>
+        <input type="file" id="photoInput" accept="image/*,.pdf" multiple style="display:none" onchange="addAiFiles(this.files)">
+      </div>
+    </div>
+
+    <div id="aiFilesList" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;"></div>
+
+    <textarea id="taskText" class="form-input" rows="4" placeholder="Опишите что нужно изготовить. Например:&#10;&#10;Угловой диван 3 метра, ткань букле слоновая кость.&#10;Кровать 180x200 с мягким изголовьем на всю стену.&#10;2 кресла для гостиной, велюр тёмно-зелёный." style="width:100%; resize:vertical; font-size:13px; line-height:1.5;"></textarea>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+      <span id="aiStatus" style="font-size:12px; color:var(--gray-light);"></span>
+      <button class="btn btn-primary" onclick="runAiAnalysis()">Сформировать КП</button>
+    </div>
   </div>
 
-  <!-- Данные клиента -->
-  <div class="client-section">
+  <!-- Manual upload (fallback) -->
+  <details style="margin-bottom:20px;">
+    <summary style="font-size:12px; color:var(--gray-light); cursor:pointer; padding:8px 0;">Загрузить вручную (без ИИ)</summary>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+      <div class="upload-area" onclick="document.getElementById('pdfInputManual').click()" style="margin:0; padding:14px;">
+        <div class="upload-title" style="font-size:13px;">PDF → парсер</div>
+        <input type="file" id="pdfInputManual" accept=".pdf" style="display:none" onchange="uploadPDF(this.files[0])">
+      </div>
+      <div class="upload-area" onclick="document.getElementById('photoInputManual').click()" style="margin:0; padding:14px;">
+        <div class="upload-title" style="font-size:13px;">Фото → позиции</div>
+        <input type="file" id="photoInputManual" accept="image/*" multiple style="display:none" onchange="uploadPhotos(this.files)">
+      </div>
+    </div>
+  </details>
+
+  <!-- Client info -->
+  <div class="client-card">
     <div class="form-group">
-      <label>Клиент</label>
+      <label class="form-label">Клиент</label>
       <input class="form-input" id="clientName" value="{{ client_name or '' }}" placeholder="ФИО клиента">
     </div>
     <div class="form-group">
-      <label>Проект</label>
-      <input class="form-input" id="projectName" value="{{ project_name or '' }}" placeholder="Название проекта / адрес">
+      <label class="form-label">Проект</label>
+      <input class="form-input" id="projectName" value="{{ project_name or '' }}" placeholder="Название / адрес">
     </div>
     <div class="form-group">
-      <label>Скидка, %</label>
+      <label class="form-label">Скидка, %</label>
       <input class="form-input" id="discountPercent" type="number" value="{{ discount_percent or 0 }}" min="0" max="100">
     </div>
     <div class="form-group">
-      <label>Номер КП</label>
+      <label class="form-label">Номер КП</label>
       <input class="form-input" id="proposalNumber" value="" placeholder="Авто">
     </div>
   </div>
 
-  <!-- Комнаты и позиции -->
+  <!-- Rooms -->
   <div id="roomsList"></div>
 
-  <!-- Добавить комнату -->
-  <div style="text-align: center; padding: 16px;">
-    <button class="btn btn-secondary" onclick="addRoom()">+ Добавить комнату</button>
+  <div class="add-room-area">
+    <button class="btn btn-outline" onclick="addRoom()">+ Добавить комнату</button>
   </div>
 
-  <!-- Итого -->
+  <!-- Summary -->
   <div class="summary" id="summary"></div>
 
 </div>
@@ -392,26 +668,51 @@
 <script>
 const PROJECT_ID = '{{ project_id }}';
 let rooms = {{ rooms | tojson }};
+let autoSaveTimer = null;
+let collapsedRooms = {};
+let projectRenders = {{ renders | default([], true) | tojson }};  // все рендеры проекта
+let renderModalTarget = null;  // {ri, ii} — для какой позиции выбираем фото
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  document.getElementById('saveStatus').textContent = 'Не сохранено';
+  document.getElementById('saveStatus').className = 'save-indicator';
+  autoSaveTimer = setTimeout(() => saveData(true), 3000);
+}
 
 function render() {
   const container = document.getElementById('roomsList');
   container.innerHTML = '';
 
   rooms.forEach((room, ri) => {
+    const isCollapsed = collapsedRooms[ri] || false;
     const roomEl = document.createElement('div');
     roomEl.className = 'room';
+
+    const itemCount = room.items.length;
+    const roomTotal = room.items.reduce((s, it) => s + it.price * it.quantity, 0);
+
     roomEl.innerHTML = `
-      <div class="room-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input value="${esc(room.name)}" onchange="rooms[${ri}].name=this.value" placeholder="Название комнаты">
-          <button class="btn btn-sm btn-secondary" onclick="addItem(${ri})">+ Позиция</button>
+      <div class="room-header" onclick="toggleRoom(${ri}, event)">
+        <div class="room-header-left">
+          <span class="room-toggle ${isCollapsed ? 'collapsed' : ''}">&#9660;</span>
+          <input class="room-name-input" value="${esc(room.name)}"
+                 onclick="event.stopPropagation()"
+                 onchange="rooms[${ri}].name=this.value; scheduleAutoSave();"
+                 placeholder="Название комнаты">
         </div>
-        <div>
-          <span class="room-subtotal" id="roomTotal${ri}"></span>
-          <button class="btn btn-sm btn-danger" onclick="deleteRoom(${ri})" style="margin-left:10px;" title="Удалить комнату">&times;</button>
+        <div class="room-header-right">
+          <span class="room-count">${itemCount} поз.</span>
+          <span class="room-subtotal" id="roomTotal${ri}">${roomTotal > 0 ? formatNum(roomTotal) + ' ₽' : ''}</span>
+          <button class="btn-icon danger" onclick="event.stopPropagation(); deleteRoom(${ri})" title="Удалить комнату">&times;</button>
         </div>
       </div>
-      <div id="items${ri}"></div>
+      <div class="room-body ${isCollapsed ? 'collapsed' : ''}" id="roomBody${ri}">
+        <div id="items${ri}"></div>
+        <div class="add-item-row">
+          <button class="add-item-btn" onclick="addItem(${ri})">+ Добавить позицию</button>
+        </div>
+      </div>
     `;
     container.appendChild(roomEl);
 
@@ -419,57 +720,187 @@ function render() {
     room.items.forEach((item, ii) => {
       itemsContainer.appendChild(createItemEl(item, ri, ii));
     });
-
-    updateRoomTotal(ri);
   });
 
   updateSummary();
 }
 
+function toggleRoom(ri, event) {
+  if (event.target.tagName === 'INPUT') return;
+  collapsedRooms[ri] = !collapsedRooms[ri];
+  render();
+}
+
 function createItemEl(item, ri, ii) {
   const div = document.createElement('div');
   div.className = 'item';
+  div.draggable = true;
+  div.dataset.roomIndex = ri;
+  div.dataset.itemIndex = ii;
 
-  const imgSrc = item.image ? '/' + item.image : '';
-  const imgHtml = imgSrc
-    ? `<img src="${imgSrc}" alt="">`
-    : `<div class="placeholder">Нажмите чтобы добавить фото</div>`;
+  div.addEventListener('dragstart', function(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ri: ri, ii: ii}));
+    this.style.opacity = '0.4';
+  });
+  div.addEventListener('dragend', function() {
+    this.style.opacity = '1';
+    document.querySelectorAll('.item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  });
+  div.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const data = JSON.parse(e.dataTransfer.types.includes('text/plain') ? '{}' : '{}');
+    this.classList.add('drag-over');
+  });
+  div.addEventListener('dragleave', function() {
+    this.classList.remove('drag-over');
+  });
+  div.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const fromRi = data.ri;
+    const fromIi = data.ii;
+    const toRi = +this.dataset.roomIndex;
+    const toIi = +this.dataset.itemIndex;
+    if (fromRi !== toRi) return;
+    if (fromIi === toIi) return;
+    const [moved] = rooms[fromRi].items.splice(fromIi, 1);
+    rooms[toRi].items.splice(toIi, 0, moved);
+    render();
+    scheduleAutoSave();
+  });
+
+  const hasImage = item.image ? true : false;
+  const imgHtml = hasImage
+    ? `<img src="/${item.image}" alt=""><div class="photo-overlay">Заменить</div>`
+    : `<div class="photo-placeholder">Добавить<br>фото</div>`;
+
+  const total = item.price * item.quantity;
 
   div.innerHTML = `
-    <div class="item-photo" title="Заменить фото">
+    <div class="drag-handle" title="Перетащить">⠿</div>
+    <div class="item-photo ${hasImage ? 'has-image' : ''}" title="Выбрать фото" onclick="openRenderModal(${ri}, ${ii})">
       ${imgHtml}
-      <input type="file" accept="image/*" onchange="uploadItemImage(this.files[0], ${ri}, ${ii})">
     </div>
     <div class="item-details">
-      <input class="item-name" value="${esc(item.name)}" placeholder="Название" onchange="rooms[${ri}].items[${ii}].name=this.value">
-      <textarea class="item-desc" placeholder="Описание, характеристики..." onchange="rooms[${ri}].items[${ii}].description=this.value">${esc(item.description || '')}</textarea>
-      <input class="item-dims" value="${esc(item.dimensions || '')}" placeholder="Размеры (мм)" onchange="rooms[${ri}].items[${ii}].dimensions=this.value">
+      <input class="item-name-input" value="${esc(item.name)}" placeholder="Название позиции"
+             onchange="rooms[${ri}].items[${ii}].name=this.value; scheduleAutoSave();">
+      <textarea class="item-desc-input" placeholder="Описание, характеристики..."
+                onchange="rooms[${ri}].items[${ii}].description=this.value; scheduleAutoSave();"
+                oninput="autoResize(this)">${esc(item.description || '')}</textarea>
+      <div class="item-dims-row">
+        <input class="item-dims-input" value="${esc(item.dimensions || '')}" placeholder="Размеры, мм"
+               onchange="rooms[${ri}].items[${ii}].dimensions=this.value; scheduleAutoSave();">
+      </div>
     </div>
-    <div>
-      <div class="field-label">Кол-во</div>
-      <input class="item-number" type="number" value="${item.quantity}" min="1" onchange="rooms[${ri}].items[${ii}].quantity=+this.value; updateRoomTotal(${ri}); updateSummary();">
+    <div class="item-numbers">
+      <div class="number-field">
+        <label>Кол-во</label>
+        <input class="number-input qty" type="number" value="${item.quantity}" min="1"
+               onchange="rooms[${ri}].items[${ii}].quantity=+this.value; updateTotals(${ri}); scheduleAutoSave();">
+      </div>
+      <div class="number-field">
+        <label>Цена, ₽</label>
+        <input class="number-input" type="text" value="${item.price > 0 ? formatNum(item.price) : ''}"
+               placeholder="0"
+               onfocus="this.value=rooms[${ri}].items[${ii}].price || ''"
+               onblur="this.value=rooms[${ri}].items[${ii}].price > 0 ? formatNum(rooms[${ri}].items[${ii}].price) : ''"
+               onchange="rooms[${ri}].items[${ii}].price=parsePrice(this.value); updateTotals(${ri}); scheduleAutoSave();">
+      </div>
+      <div class="item-total-value" id="itemTotal${ri}_${ii}">${total > 0 ? formatNum(total) : '—'}</div>
+      <button class="btn-icon" onclick="duplicateItem(${ri}, ${ii})" title="Дублировать" style="margin-top:18px;">⧉</button>
+      <button class="btn-icon danger" onclick="deleteItem(${ri}, ${ii})" title="Удалить" style="margin-top:18px;">&times;</button>
     </div>
-    <div>
-      <div class="field-label">Цена, ₽</div>
-      <input class="item-number" type="number" value="${item.price}" min="0" step="1000" onchange="rooms[${ri}].items[${ii}].price=+this.value; updateRoomTotal(${ri}); updateSummary();">
-    </div>
-    <div class="item-total" id="itemTotal${ri}_${ii}">${formatNum(item.price * item.quantity)}</div>
-    <button class="delete-btn" onclick="deleteItem(${ri}, ${ii})" title="Удалить">&times;</button>
   `;
 
   return div;
 }
 
-function updateRoomTotal(ri) {
-  let total = 0;
+// ===== Render gallery =====
+function collectAllImages() {
+  // Собираем все уникальные картинки из проекта
+  const imgs = new Set();
+  rooms.forEach(room => {
+    room.items.forEach(item => {
+      if (item.image) imgs.add(item.image);
+    });
+  });
+  projectRenders.forEach(r => imgs.add(r));
+  return Array.from(imgs);
+}
+
+function openRenderModal(ri, ii) {
+  renderModalTarget = { ri, ii };
+  const allImages = collectAllImages();
+  const currentImage = rooms[ri].items[ii].image || '';
+  const grid = document.getElementById('renderGrid');
+
+  if (allImages.length === 0) {
+    // Нет рендеров — сразу открываем загрузку файла
+    document.getElementById('renderFileInput').click();
+    return;
+  }
+
+  grid.innerHTML = '';
+  allImages.forEach(imgPath => {
+    const div = document.createElement('div');
+    div.className = 'render-option' + (imgPath === currentImage ? ' selected' : '');
+    div.innerHTML = `<img src="/${imgPath}" alt="">`;
+    div.onclick = () => selectRender(imgPath);
+    grid.appendChild(div);
+  });
+
+  document.getElementById('renderModal').classList.add('active');
+}
+
+function closeRenderModal() {
+  document.getElementById('renderModal').classList.remove('active');
+  renderModalTarget = null;
+}
+
+function selectRender(imgPath) {
+  if (!renderModalTarget) return;
+  const { ri, ii } = renderModalTarget;
+  rooms[ri].items[ii].image = imgPath;
+  closeRenderModal();
+  render();
+  scheduleAutoSave();
+}
+
+async function uploadAndSelectImage(file) {
+  if (!file || !renderModalTarget) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.path) {
+    projectRenders.push(data.path);
+    selectRender(data.path);
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function parsePrice(val) {
+  return parseInt(String(val).replace(/\s/g, '').replace(/[^\d]/g, '')) || 0;
+}
+
+function updateTotals(ri) {
+  let roomTotal = 0;
   rooms[ri].items.forEach((item, ii) => {
     const t = item.price * item.quantity;
-    total += t;
+    roomTotal += t;
     const el = document.getElementById(`itemTotal${ri}_${ii}`);
-    if (el) el.textContent = formatNum(t);
+    if (el) el.textContent = t > 0 ? formatNum(t) : '—';
   });
   const el = document.getElementById(`roomTotal${ri}`);
-  if (el) el.textContent = total > 0 ? formatNum(total) + ' ₽' : '';
+  if (el) el.textContent = roomTotal > 0 ? formatNum(roomTotal) + ' ₽' : '';
+  updateSummary();
 }
 
 function updateSummary() {
@@ -485,24 +916,26 @@ function updateSummary() {
   const discountAmt = totalSum * discount / 100;
   const grand = totalSum - discountAmt;
 
-  let html = `<div class="summary-row"><span>Позиций: ${totalQty} шт.</span><span>Сумма: ${formatNum(totalSum)} ₽</span></div>`;
+  let html = `<div class="summary-row"><span>Позиций: ${totalQty} шт.</span><span>${formatNum(totalSum)} ₽</span></div>`;
   if (discount > 0) {
-    html += `<div class="summary-row" style="color:var(--danger)"><span>Скидка ${discount}%:</span><span>-${formatNum(discountAmt)} ₽</span></div>`;
+    html += `<div class="summary-row discount"><span>Скидка ${discount}%</span><span>-${formatNum(discountAmt)} ₽</span></div>`;
   }
-  html += `<div class="summary-row"><span class="summary-total">ИТОГО: ${formatNum(grand)} ₽</span></div>`;
+  html += `<div class="summary-divider"></div>`;
+  html += `<div class="summary-total"><span class="summary-total-label">Итого</span><span class="summary-total-value">${formatNum(grand)} ₽</span></div>`;
   document.getElementById('summary').innerHTML = html;
 }
 
 function addRoom() {
   rooms.push({ name: 'Новая комната', items: [] });
   render();
+  scheduleAutoSave();
 }
 
 function deleteRoom(ri) {
-  if (confirm('Удалить комнату "' + rooms[ri].name + '"?')) {
-    rooms.splice(ri, 1);
-    render();
-  }
+  if (!confirm('Удалить комнату «' + rooms[ri].name + '»?')) return;
+  rooms.splice(ri, 1);
+  render();
+  scheduleAutoSave();
 }
 
 function addItem(ri) {
@@ -514,12 +947,23 @@ function addItem(ri) {
     price: 0,
     image: ''
   });
+  collapsedRooms[ri] = false;
   render();
+  scheduleAutoSave();
 }
 
 function deleteItem(ri, ii) {
   rooms[ri].items.splice(ii, 1);
   render();
+  scheduleAutoSave();
+}
+
+function duplicateItem(ri, ii) {
+  const original = rooms[ri].items[ii];
+  const copy = JSON.parse(JSON.stringify(original));
+  rooms[ri].items.splice(ii + 1, 0, copy);
+  render();
+  scheduleAutoSave();
 }
 
 async function uploadItemImage(file, ri, ii) {
@@ -530,12 +974,73 @@ async function uploadItemImage(file, ri, ii) {
   if (data.path) {
     rooms[ri].items[ii].image = data.path;
     render();
+    scheduleAutoSave();
   }
+}
+
+// ===== Умное ТЗ =====
+let aiFiles = [];
+
+function addAiFiles(fileList) {
+  for (let i = 0; i < fileList.length; i++) {
+    aiFiles.push(fileList[i]);
+  }
+  renderAiFiles();
+}
+
+function removeAiFile(idx) {
+  aiFiles.splice(idx, 1);
+  renderAiFiles();
+}
+
+function renderAiFiles() {
+  const el = document.getElementById('aiFilesList');
+  if (aiFiles.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = aiFiles.map((f, i) => `
+    <span style="display:inline-flex; align-items:center; gap:4px; background:var(--light); border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:12px;">
+      ${f.name.toLowerCase().endsWith('.pdf') ? '📄' : '🖼'} ${f.name.length > 25 ? f.name.slice(0,22)+'...' : f.name}
+      <span style="cursor:pointer; color:var(--gray-light); font-size:14px;" onclick="removeAiFile(${i})">&times;</span>
+    </span>
+  `).join('');
+  document.getElementById('aiStatus').textContent = `${aiFiles.length} файл(ов) добавлено`;
+}
+
+async function runAiAnalysis() {
+  const task = document.getElementById('taskText').value.trim();
+  if (!task) { toast('Напишите техническое задание'); return; }
+  if (aiFiles.length === 0) { toast('Загрузите фото или PDF'); return; }
+
+  showLoading('ИИ анализирует проект... Это может занять 1-2 минуты.');
+  const fd = new FormData();
+  fd.append('task', task);
+  aiFiles.forEach(f => fd.append('files', f));
+
+  try {
+    const res = await fetch('/api/ai-analyze/' + PROJECT_ID, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.rooms) {
+      rooms = data.rooms;
+      if (data.renders) projectRenders = data.renders;
+      render();
+      toast(`ИИ нашёл ${data.count} позиций мебели`);
+      aiFiles = [];
+      renderAiFiles();
+      document.getElementById('aiStatus').textContent = '';
+    } else if (data.error) {
+      toast(data.error);
+    }
+  } catch (e) {
+    toast('Ошибка анализа');
+  }
+  hideLoading();
 }
 
 async function uploadPDF(file) {
   if (!file) return;
-  showLoading('Анализ PDF...');
+  showLoading('Анализ PDF... Это может занять минуту.');
   const fd = new FormData();
   fd.append('file', file);
   try {
@@ -543,8 +1048,9 @@ async function uploadPDF(file) {
     const data = await res.json();
     if (data.rooms) {
       rooms = data.rooms;
+      if (data.renders) projectRenders = data.renders;
       render();
-      toast(`Найдено ${data.count} позиций мебели`);
+      toast(`Найдено ${data.count} позиций, ${(data.renders||[]).length} рендеров`);
     } else if (data.error) {
       toast(data.error);
     }
@@ -552,6 +1058,30 @@ async function uploadPDF(file) {
     toast('Ошибка загрузки');
   }
   hideLoading();
+}
+
+async function uploadPhotos(files) {
+  if (!files || files.length === 0) return;
+  showLoading(`Загрузка ${files.length} фото...`);
+  const fd = new FormData();
+  for (let i = 0; i < files.length; i++) {
+    fd.append('files', files[i]);
+  }
+  try {
+    const res = await fetch('/api/upload-photos/' + PROJECT_ID, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.rooms) {
+      rooms = data.rooms;
+      render();
+      toast(`Добавлено ${data.count} позиций с фото`);
+    } else if (data.error) {
+      toast(data.error);
+    }
+  } catch (e) {
+    toast('Ошибка загрузки');
+  }
+  hideLoading();
+  document.getElementById('photoInput').value = '';
 }
 
 function getProjectData() {
@@ -563,29 +1093,55 @@ function getProjectData() {
   };
 }
 
-async function saveData() {
+async function saveData(silent) {
+  const status = document.getElementById('saveStatus');
+  status.textContent = 'Сохранение...';
+  status.className = 'save-indicator saving';
+
   await fetch('/api/project/' + PROJECT_ID + '/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(getProjectData())
   });
-  toast('Сохранено');
+
+  status.textContent = 'Сохранено';
+  status.className = 'save-indicator saved';
+  setTimeout(() => { status.textContent = ''; status.className = 'save-indicator'; }, 2000);
+
+  if (!silent) toast('Сохранено');
+}
+
+async function _generateAndGetFilename() {
+  const res = await fetch('/api/generate/' + PROJECT_ID, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getProjectData())
+  });
+  const data = await res.json();
+  return data.filename || null;
 }
 
 async function generatePDF() {
   showLoading('Генерация PDF...');
-  const payload = getProjectData();
-
   try {
-    const res = await fetch('/api/generate/' + PROJECT_ID, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.filename) {
-      window.location.href = '/download/' + data.filename;
-      toast('PDF готов!');
+    const filename = await _generateAndGetFilename();
+    if (filename) {
+      window.location.href = '/download/' + filename;
+      toast('PDF скачан!');
+    }
+  } catch (e) {
+    toast('Ошибка генерации');
+  }
+  hideLoading();
+}
+
+async function previewPDF() {
+  showLoading('Генерация предпросмотра...');
+  try {
+    const filename = await _generateAndGetFilename();
+    if (filename) {
+      window.open('/preview/' + filename, '_blank');
+      toast('Предпросмотр открыт');
     }
   } catch (e) {
     toast('Ошибка генерации');
@@ -598,7 +1154,7 @@ function formatNum(n) {
 }
 
 function esc(s) {
-  return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return (s || '').replace(/&/g,'&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 function toast(msg) {
@@ -611,7 +1167,7 @@ function toast(msg) {
 
 function showLoading(msg) {
   const el = document.getElementById('loading');
-  el.querySelector('span').textContent = msg || 'Загрузка...';
+  el.querySelector('.loading-text').textContent = msg || 'Загрузка...';
   el.classList.add('active');
 }
 
@@ -619,7 +1175,7 @@ function hideLoading() {
   document.getElementById('loading').classList.remove('active');
 }
 
-// Drag & drop для PDF
+// Drag & drop для обеих зон
 const ua = document.getElementById('uploadArea');
 ua.addEventListener('dragover', e => { e.preventDefault(); ua.classList.add('dragover'); });
 ua.addEventListener('dragleave', () => ua.classList.remove('dragover'));
@@ -627,18 +1183,42 @@ ua.addEventListener('drop', e => {
   e.preventDefault();
   ua.classList.remove('dragover');
   const file = e.dataTransfer.files[0];
-  if (file && file.name.toLowerCase().endsWith('.pdf')) {
-    uploadPDF(file);
+  if (file && file.name.toLowerCase().endsWith('.pdf')) uploadPDF(file);
+  else toast('Нужен PDF файл');
+});
+
+const up = document.getElementById('uploadPhotos');
+up.addEventListener('dragover', e => { e.preventDefault(); up.classList.add('dragover'); });
+up.addEventListener('dragleave', () => up.classList.remove('dragover'));
+up.addEventListener('drop', e => {
+  e.preventDefault();
+  up.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  const images = Array.from(files).filter(f => /\.(jpe?g|png|webp)$/i.test(f.name));
+  if (images.length > 0) {
+    const dt = new DataTransfer();
+    images.forEach(f => dt.items.add(f));
+    uploadPhotos(dt.files);
   } else {
-    toast('Нужен PDF файл');
+    toast('Нужны изображения (JPG, PNG)');
   }
 });
 
-// Обновление итого при изменении скидки
-document.getElementById('discountPercent').addEventListener('input', updateSummary);
+// Autosave on field changes
+['clientName', 'projectName', 'discountPercent'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (id === 'discountPercent') updateSummary();
+    scheduleAutoSave();
+  });
+});
 
-// Первый рендер
+// Initial render
 render();
+
+// Auto-resize textareas on load
+setTimeout(() => {
+  document.querySelectorAll('.item-desc-input').forEach(autoResize);
+}, 100);
 </script>
 
 </body>
